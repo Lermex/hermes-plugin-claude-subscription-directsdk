@@ -1,0 +1,10 @@
+{
+  "name": "claude-subscription-directsdk-experimental",
+  "label": "Claude Accounts",
+  "description": "Pooled Claude subscriptions: login state, plan limits, benching and rotation order.",
+  "icon": "KeyRound",
+  "version": "0.3.4",
+  "tab": { "path": "/claude-accounts", "position": "after:system" },
+  "entry": "dist/index.js",
+  "api": "plugin_api.py"
+}
