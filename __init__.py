@@ -135,8 +135,23 @@ class ClaudeOAuthDirectSDKProfile(ProviderProfile):
     def create_client(self, **client_kwargs):
         try:
             from .directsdk import Client
+            from .accounts import account_dir
         except ImportError:
             from directsdk import Client
+            from accounts import account_dir
+        # Main-agent runtimes already supply a pool reference. Auxiliary external-process
+        # resolution supplies only a placeholder, including when rebuilding after a 429.
+        # Resolve that placeholder through the SAME core pool so the selected directory
+        # and client.api_key identify the actual account used by recovery.
+        if not account_dir(client_kwargs.get('api_key')):
+            from agent.credential_pool import load_pool
+            pool = load_pool(self.name)
+            if pool.has_credentials():
+                entry = pool.select()
+                if entry is None or not account_dir(entry.runtime_api_key):
+                    raise RuntimeError('No available pooled Claude account; ambient login is disabled while the pool is configured')
+                client_kwargs['api_key'] = entry.runtime_api_key
+                client_kwargs['pooled_auxiliary'] = True
         return Client(**client_kwargs)
 
     def fetch_models(self, **kwargs):

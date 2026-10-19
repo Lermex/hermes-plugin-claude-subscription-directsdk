@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.5] - Unreleased
+
+### Fixed
+
+- Compression/auxiliary external-process clients now resolve placeholder credentials through the same account pool as main-agent requests, instead of silently using the ambient Claude login. Non-streaming auxiliary requests retry recognized subscription quota failures on the next pooled login, including `provider: auto`, preserving the quota reset timestamp. Account references are request-local for cached/shared clients; an exhausted configured pool never falls back to the ambient login. Explicit main-agent references and empty-pool single-login behavior are unchanged.
+- No compression cooldown is disabled or cleared: the fix prevents this account-routing failure before it reaches the summary-failure breaker. Other summary failures still surface normally; streaming replay and provider/model fallback behavior are not changed.
+
 ## [0.3.4] - Unreleased
 
 ### Added

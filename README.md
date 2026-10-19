@@ -106,6 +106,28 @@ core's standard credential-pool path: a plan-limit answer is reported as a 429 c
 `usage_limit_reached` and `resets_at` (from `anthropic-ratelimit-unified-reset`, else parsed
 from native's "resets …" text), so `hermes auth list` shows the benched entry and when it reopens.
 
+### Compression and auxiliary account rotation
+
+Starting with 0.3.5, auxiliary clients created with an external-process placeholder select
+from the same pool as main-agent requests. Non-streaming compression calls (including
+`provider: auto` when it resolves to this plugin) retry recognized session/weekly quota
+failures on the next account, preserving the reported reset time. Each account is attempted
+at most once per call. A nonempty but exhausted pool does not use an ambient/default login.
+Explicit main-agent account references keep core-managed rotation; streaming responses are
+not replayed, and non-quota failures remain errors rather than triggering account switches.
+No other provider or model is selected by this plugin.
+
+`compression blocked: cooldown:<seconds>` is a summary-failure breaker, not an account's
+quota-reset timer. This fix prevents the account-routing failure; it does not disable the
+breaker or clear an already-persisted cooldown. If the warning remains, inspect the earlier
+`Failed to generate context summary` error. A timeout, invalid response, context-size error,
+or a compression route using a different provider is not fixed by account rotation.
+
+Update the plugin in the **affected Hermes installation**, then restart its long-running
+process to load the new code. Updating a separate home installation cannot fix a work instance.
+When reporting a remaining failure, include Hermes/plugin versions, the sanitized compression
+provider/model configuration, and the preceding summary-error lines (no tokens or auth files).
+
 ### Proxies
 
 The relay opens the upstream connection itself, so it applies native's proxy variables from the Hermes process environment: `https_proxy`/`HTTPS_PROXY`, then `http_proxy`/`HTTP_PROXY`, with `NO_PROXY` exceptions (standard-library matching; comma- or space-separated). The proxy must be an `http://` CONNECT proxy; `user:pass@` in its URL becomes a `Proxy-Authorization` header. TLS still terminates at `api.anthropic.com`, so the subscription bearer never reaches the proxy. A SOCKS or TLS-to-proxy URL is ignored with a warning and the relay connects directly, as it did before proxy support.
