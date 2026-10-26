@@ -3,7 +3,9 @@
 Read-only view of the provider's pooled Claude logins (see ../accounts.py) plus the one write
 the operator needs from a dashboard: clearing a bench early. Plan limits come from Anthropic's
 ``/api/oauth/usage`` with each account's own token, read from its ``CLAUDE_CONFIG_DIR`` and never
-refreshed or written (Claude Code owns the grant; its refresh tokens are single-use).
+refreshed or written (Claude Code owns the grant; its refresh tokens are single-use). Login state
+is likewise read from the credential file: this page polls, and a polled ``claude auth status``
+can exit mid-refresh and sign the account out.
 """
 from __future__ import annotations
 
@@ -104,7 +106,9 @@ def _login_status(config_dir: str) -> Dict[str, Any]:
         hit = _status_cache.get(config_dir)
         if hit and now - hit[0] < STATUS_TTL:
             return hit[1]
-    status = _module("accounts").auth_status(config_dir)
+    # File read only. Never `claude auth status` here: that short-lived process can rotate the
+    # single-use refresh token and exit before saving it, logging the account out (CLI <= 2.1.300).
+    status = _module("accounts").login_state(config_dir)
     with _lock:
         _status_cache[config_dir] = (now, status)
     return status

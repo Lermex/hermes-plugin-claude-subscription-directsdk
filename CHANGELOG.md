@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.6] - Unreleased
+
+### Fixed
+
+- The Claude Accounts dashboard tab and the provider's setup probe no longer run `claude auth status` to learn whether a pooled login is signed in; they read the login's credential file. A short-lived `auth status` on an expired access token starts an OAuth refresh and can exit before the rotated, single-use refresh token is saved, so the next real request gets `invalid_grant` and Claude Code blanks the login (CLI 2.1.288-2.1.300; fixed upstream in 2.1.301). The dashboard polled that command every minute per account, which signed pooled accounts out one by one. `auth_status` remains for the one-off `hermes auth` commands and the post-login check. A blanked login is now reported as "login cleared - sign in again" instead of "logged in".
+
 ## [0.3.5] - Unreleased
 
 ### Fixed

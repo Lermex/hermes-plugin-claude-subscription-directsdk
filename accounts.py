@@ -67,8 +67,32 @@ def read_oauth_credentials(config_dir):
     return creds if isinstance(creds, dict) and creds.get("accessToken") else None
 
 
+def login_state(config_dir):
+    """``{logged_in, plan, method, error}`` from the directory's credential file alone — no Claude
+    Code process. ``claude auth status`` is a short-lived process that can start an OAuth refresh
+    and exit before saving the rotated (single-use) refresh token; the next real request then gets
+    ``invalid_grant`` and Claude Code blanks the login (CLI 2.1.288–2.1.300). Anything that polls
+    login state — the dashboard above all — must use this, never ``auth_status``."""
+    try:
+        payload = json.loads(credentials_file(config_dir).read_text(encoding="utf-8"))
+    except OSError:
+        return {"logged_in": False, "plan": "", "method": "", "error": "no credential file"}
+    except ValueError:
+        return {"logged_in": False, "plan": "", "method": "", "error": "unreadable credential file"}
+    creds = payload.get("claudeAiOauth") if isinstance(payload, dict) else None
+    if not isinstance(creds, dict):
+        return {"logged_in": False, "plan": "", "method": "", "error": "no claude.ai login"}
+    # A blanked login keeps every non-secret field and empties both tokens (expiresAt 0).
+    if not (creds.get("accessToken") or creds.get("refreshToken")):
+        return {"logged_in": False, "plan": str(creds.get("subscriptionType") or ""), "method": "",
+                "error": "login cleared — sign in again"}
+    return {"logged_in": True, "plan": str(creds.get("subscriptionType") or ""), "method": "claude.ai", "error": ""}
+
+
 def auth_status(config_dir, command=None, env=None, timeout=20):
-    """``claude auth status`` for one directory: ``{logged_in, plan, method}`` (never raises)."""
+    """``claude auth status`` for one directory: ``{logged_in, plan, method}`` (never raises).
+
+    Spawns Claude Code: for one-off CLI commands only. Pollers must use :func:`login_state`."""
     env = dict(env if env is not None else os.environ)
     resolved = _resolve(command, env)
     if resolved is None:
@@ -125,13 +149,16 @@ def pool_accounts():
 
 
 def any_pooled_login(command=None, env=None):
-    """``{logged_in, plan}`` of the first pooled account that is signed in, else ``None``."""
+    """``{logged_in, plan}`` of the first pooled account that is signed in, else ``None``.
+
+    Reads the credential files; status probes run often enough that a spawned ``auth status`` per
+    account would risk the mid-refresh sign-out described at :func:`login_state`."""
     try:
         rows = pool_accounts()
     except Exception:
         return None
     for _entry, path in rows:
-        status = auth_status(path, command=command, env=env)
+        status = login_state(path)
         if status["logged_in"]:
             return status
     return None
