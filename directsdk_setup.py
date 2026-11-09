@@ -186,7 +186,7 @@ def discover_models(command=None, env=None, timeout=40):
     # Pro / Team-standard seats bill Fable to usage credits from the first request; the CLI only
     # says so at request time, so apply the documented plan rule here.
     plan = str((response.get("response", {}).get("account") or {}).get("subscriptionType") or "").lower()
-    credit_billed_on_plan = {"claude-fable-5-1"} if plan and "max" not in plan else set()
+    credit_billed_on_plan = {"claude-fable-5-1", "claude-fable-5-2"} if plan and "max" not in plan else set()
     # The pinned table adds metadata (1M route, window, aliases) to the models it knows; it never
     # decides visibility, so a model the CLI ships before the table does is listed the same day.
     announced = [str(row.get("resolvedModel") or row.get("value") or "") for row in native]

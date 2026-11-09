@@ -8,6 +8,7 @@ CONTEXT_WINDOWS = {
     'claude-opus-5': 1_000_000,
     'claude-opus-4-8': 1_000_000,
     'claude-fable-5-1': 1_000_000,
+    'claude-fable-5-2': 1_000_000,
 }
 # Families that 400 on ``thinking: {"type": "disabled"}`` (the same contract Hermes core keeps
 # in agent/anthropic_adapter.py). A caller's disable is omitted for them, which beats a dead
@@ -24,7 +25,7 @@ ALIASES = {
     'haiku': 'claude-haiku-5-5',
     'claude-haiku-4-5': 'claude-haiku-4-5-20251001',
     'opus': 'claude-opus-5-5',
-    'fable': 'claude-fable-5-1',
+    'fable': 'claude-fable-5-2',
 }
 # Haiku 4.5 rejects `thinking: {'type': 'adaptive'}` with a 400 upstream; its effort signal
 # still applies. Unknown routes keep adaptive so future models are not silently downgraded.

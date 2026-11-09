@@ -14,6 +14,7 @@ EXPECTED = {
     'claude-opus-5[1m]': 1_000_000,
     'claude-opus-4-8[1m]': 1_000_000,
     'claude-fable-5-1[1m]': 1_000_000,
+    'claude-fable-5-2[1m]': 1_000_000,
 }
 
 
@@ -36,7 +37,7 @@ def test_native_argv_enables_only_known_long_context_models(profile, tmp_path):
     native.write_text(FAKE.replace('rows=[]', "pathlib.Path(os.environ['ARGV_CAPTURE']).write_text(json.dumps(sys.argv))\nrows=[]"))
     aliases = {'sonnet':'claude-sonnet-5-5[1m]', 'opus':'claude-opus-5-5[1m]',
                'haiku':'claude-haiku-5-5[1m]', 'claude-haiku-4-5':'claude-haiku-4-5-20251001',
-               'fable':'claude-fable-5-1[1m]',
+               'fable':'claude-fable-5-2[1m]',
                'unqualified-future-model':'unqualified-future-model'}
     with_client = profile.create_client(command=[sys.executable,str(native)], env={'PATH':os.defpath,'HOME':str(tmp_path),'ARGV_CAPTURE':str(capture)})
     try:
